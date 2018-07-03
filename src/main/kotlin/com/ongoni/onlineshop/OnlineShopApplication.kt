@@ -2,6 +2,7 @@ package com.ongoni.onlineshop
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 
 @SpringBootApplication
 class OnlineShopApplication {
