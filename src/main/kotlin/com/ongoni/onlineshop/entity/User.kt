@@ -16,7 +16,6 @@ class User(
         @get:JvmName("getPassword_")
         var password: String = "",
 
-        @Column
         var email: String = "",
 
         @Column(name = "first_name")
