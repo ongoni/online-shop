@@ -1,10 +1,12 @@
 package com.ongoni.onlineshop
 
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
 import org.springframework.boot.runApplication
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 
 @SpringBootApplication
+@EnableAutoConfiguration(exclude = [JacksonAutoConfiguration::class])
 class OnlineShopApplication {
 
     companion object {
