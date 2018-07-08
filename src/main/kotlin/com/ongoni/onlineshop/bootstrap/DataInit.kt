@@ -24,6 +24,5 @@ class DataInit : ApplicationListener<ContextRefreshedEvent> {
                     roles = mutableSetOf(Role.USER, Role.SUPER)
             ))
         }
-
     }
 }
