@@ -15,6 +15,10 @@ class SessionService : HashExtensions {
 
     fun findById(id: Long): Optional<Session> = sessionRepository.findById(id)
 
+    fun findByToken(token: String): Optional<Session> = sessionRepository.findOneByToken(token)
+
+    fun findAllByUser(user: User) = sessionRepository.findAllByUser(user)
+
     fun save(session: Session) = sessionRepository.save(session)
 
     fun deleteById(id: Long) = sessionRepository.deleteById(id)

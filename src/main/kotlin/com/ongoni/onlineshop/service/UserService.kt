@@ -15,7 +15,11 @@ class UserService {
 
     fun findOneByUsername(username: String): Optional<User> = userRepository.findOneByUsername(username)
 
+    fun findOneByEmail(email: String): Optional<User> = userRepository.findOneByEmail(email)
+
     fun save(user: User) = userRepository.saveAndFlush(user)
+
+    fun delete(user: User) = userRepository.delete(user)
 
     fun deleteById(id: Long) = userRepository.deleteById(id)
 
