@@ -5,15 +5,15 @@ import javax.persistence.*
 @Entity
 @Table(name = "user")
 data class User(
-        @Id @GeneratedValue(strategy = GenerationType.AUTO)
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
         var id: Long = 0,
 
-        @get:JvmName("getUsername_")
+        @Column(unique = true)
         var username: String = "",
 
-        @get:JvmName("getPassword_")
         var password: String = "",
 
+        @Column(unique = true)
         var email: String = "",
 
         @Column(name = "first_name")
@@ -25,7 +25,7 @@ data class User(
         @ElementCollection(targetClass = Role::class, fetch = FetchType.EAGER)
         @CollectionTable(name = "role", joinColumns = [(JoinColumn(name = "user_id"))])
         @Enumerated(EnumType.STRING)
-        val roles: MutableSet<Role> = mutableSetOf(),
+        var roles: MutableSet<Role> = mutableSetOf(),
 
         var active: Boolean = true
 ) {

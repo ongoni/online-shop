@@ -6,7 +6,7 @@ import javax.persistence.*
 @Entity
 @Table(name = "user_order")
 data class Order(
-        @Id @GeneratedValue(strategy = GenerationType.AUTO)
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
         var id: Long = 0,
 
         @ManyToOne(fetch = FetchType.LAZY)
