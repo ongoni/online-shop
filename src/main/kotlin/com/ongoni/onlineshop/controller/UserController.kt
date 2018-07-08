@@ -1,58 +1,164 @@
 package com.ongoni.onlineshop.controller
 
+import com.ongoni.onlineshop.entity.Role
+import com.ongoni.onlineshop.entity.User
 import com.ongoni.onlineshop.service.SessionService
 import com.ongoni.onlineshop.service.UserService
 import com.ongoni.onlineshop.utils.HashExtensions
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import kotlin.math.roundToLong
 
 @RestController
-@RequestMapping("/users")
 class UserController : HashExtensions {
     @Autowired
     private lateinit var userService: UserService
     @Autowired
     private lateinit var sessionService: SessionService
 
-    @PostMapping(produces = ["application/json"])
-    fun auth(@RequestParam username: String, @RequestParam password: String): Map<String, Any> {
-        val user = userService.findOneByUsername(username)
-        if (!user.isPresent) {
-            return mapOf(
-                    "error" to true,
-                    "message" to "User not found"
+    @PostMapping("/users", consumes = ["application/json"], produces = ["application/json"])
+    fun auth(@RequestBody user: User): ResponseEntity<Map<String, Any>> {
+        val foundUser = userService.findOneByUsername(user.username)
+        if (!foundUser.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "User not found"),
+                    HttpStatus.NOT_FOUND
             )
         }
 
-        if (user.get().password != password.hashed()) {
-            return mapOf(
-                    "error" to true,
-                    "message" to "Incorrect password"
+        if (foundUser.get().password != user.password.hashed()) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Incorrect password"),
+                    HttpStatus.BAD_REQUEST
             )
         }
 
-        val session = sessionService.create(user.get())
+        val session = sessionService.create(foundUser.get())
         sessionService.save(session)
 
-        return mapOf(
-                "error" to false,
-                "access_token" to session.token
+        return ResponseEntity(
+                mapOf("error" to false, "access_token" to session.token),
+                HttpStatus.OK
         )
     }
 
-    @GetMapping(produces = ["application/json"])
-    fun info(@PathVariable id: Long): Map<String, Any> {
-        return userService.findById(id).get().safeSerialized()
+    @GetMapping("/users/{id}", consumes = ["application/json"], produces = ["application/json"])
+    fun info(@PathVariable("id") id: Long): ResponseEntity<Map<String, Any>> {
+        val user = userService.findById(id)
+        if (!user.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "User not found"),
+                    HttpStatus.NOT_FOUND
+            )
+        }
+
+        return ResponseEntity(
+                mapOf("error" to false, "user" to user.get().safeSerialized()),
+                HttpStatus.OK
+        )
     }
 
-    @PutMapping(produces = ["application/json"])
-    fun update(): Map<String, Any> {
-        return mapOf()
+    @PutMapping("/users", consumes = ["application/json"], produces = ["application/json"])
+    fun update(@RequestBody map: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+        val id = (map["id"]!! as Double).roundToLong()
+        val token = map["access_token"] as String
+        if (token.isBlank() || (!token.isBlank()) && !sessionService.findByToken(token).isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Invalid token"),
+                    HttpStatus.UNAUTHORIZED
+            )
+        }
+
+        val session = sessionService.findByToken(token)
+        if (session.get().user.id != id && !session.get().user.roles.contains(Role.SUPER)) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "No necessary authorities"),
+                    HttpStatus.FORBIDDEN
+            )
+        }
+
+        if (!map.keys.any { x -> x =="password" || x == "first_name" || x == "last_name" || x == "email"}) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "No data to update"),
+                    HttpStatus.BAD_REQUEST
+            )
+        }
+
+        val user = userService.findById(id)
+        if (!user.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "User not found"),
+                    HttpStatus.NOT_FOUND
+            )
+        }
+
+        if (map["password"] is String) {
+            user.get().password = map["password"].toString().hashed()
+        }
+        if (map["first_name"] is String) {
+            user.get().firstName = map["first_name"].toString()
+        }
+        if (map["last_name"] is String) {
+            user.get().lastName = map["last_name"].toString()
+        }
+        if (map["email"] is String) {
+            val email = map["email"].toString()
+
+            if (!userService.findOneByEmail(email).isPresent) {
+                user.get().email = email
+            } else {
+                return ResponseEntity(
+                        mapOf("error" to true, "message" to "Email is already used"),
+                        HttpStatus.BAD_REQUEST
+                )
+            }
+        }
+
+        userService.save(user.get())
+
+        return ResponseEntity(
+                mapOf("error" to false, "user" to user),
+                HttpStatus.OK
+        )
     }
 
-    @DeleteMapping(produces = ["application/json"])
-    fun delete(@PathVariable id: Long): Map<String, Any> {
-        return mapOf()
+    @DeleteMapping("/users", consumes = ["application/json"], produces = ["application/json"])
+    fun delete(@RequestBody map: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+        val id = (map["id"]!! as Double).roundToLong()
+        val token = map["access_token"] as String
+
+        val session = sessionService.findByToken(token)
+        if (!session.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Invalid token"),
+                    HttpStatus.UNAUTHORIZED
+            )
+        }
+
+        val user = userService.findById(id)
+        if (!user.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "User not found"),
+                    HttpStatus.NOT_FOUND
+            )
+        }
+
+        if ((session.get().user.roles.contains(Role.SUPER) && user.get().roles.contains(Role.SUPER))
+                || !session.get().user.roles.contains(Role.SUPER)) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "No necessary authorities"),
+                    HttpStatus.FORBIDDEN
+            )
+        }
+
+        userService.deleteById(user.get().id)
+
+        return ResponseEntity(
+                mapOf("error" to false),
+                HttpStatus.OK
+        )
     }
 
 }
