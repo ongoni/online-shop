@@ -14,14 +14,16 @@ class DataInit : ApplicationListener<ContextRefreshedEvent> {
     private lateinit var userService: UserService
 
     override fun onApplicationEvent(p0: ContextRefreshedEvent) {
-        userService.save(User(
-                username = "ongoni",
-                password = "\$2a\$10\$y2RRilwUKlvfbBfvUJ9qQ.VfB5opFpk3wh70pP3rxIJfXhqzTZBaG",
-                email = "ongoni.fg@gmail.com",
-                firstName = "Alexander",
-                lastName = "Krivonozhkin",
-                roles = mutableSetOf(Role.USER, Role.SUPER)
-        ))
-    }
+        if (!userService.findOneByUsername("ongoni").isPresent) {
+            userService.save(User(
+                    username = "ongoni",
+                    password = "b5ba77af1f7bda735894e746a199acb1d2c836424da2fc46bebb55423dccbff871877a30fab77a31e47b0a29ea0154882e532e9a29b220a8f2958773313bbb2a",
+                    email = "ongoni.fg@gmail.com",
+                    firstName = "Alexander",
+                    lastName = "Krivonozhkin",
+                    roles = mutableSetOf(Role.USER, Role.SUPER)
+            ))
+        }
 
+    }
 }
