@@ -1,12 +1,10 @@
 package com.ongoni.onlineshop.entity
 
-import org.springframework.security.core.GrantedAuthority
-import org.springframework.security.core.userdetails.UserDetails
 import javax.persistence.*
 
 @Entity
 @Table(name = "user")
-class User(
+data class User(
         @Id @GeneratedValue(strategy = GenerationType.AUTO)
         var id: Long = 0,
 
@@ -30,21 +28,15 @@ class User(
         val roles: MutableSet<Role> = mutableSetOf(),
 
         var active: Boolean = true
-) : UserDetails {
+) {
 
-    override fun getUsername(): String = username
+    fun safeSerialized(): Map<String, Any> = mapOf(
+            "id" to id,
+            "username" to username,
+            "first_name" to firstName,
+            "last_name" to lastName,
+            "email" to email,
+            "roles" to roles
+    )
 
-    override fun getPassword(): String = password
-
-    override fun getAuthorities(): MutableCollection<out GrantedAuthority> = roles
-
-    override fun isEnabled(): Boolean = active
-
-    override fun isCredentialsNonExpired(): Boolean = true
-
-    override fun isAccountNonLocked(): Boolean = active
-
-    override fun isAccountNonExpired(): Boolean = true
-
-    fun getFullName(): String = "$firstName $lastName"
 }
