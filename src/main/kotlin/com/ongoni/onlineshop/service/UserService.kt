@@ -13,8 +13,10 @@ class UserService {
 
     fun findById(id: Long): Optional<User> = userRepository.findById(id)
 
-    fun findOneByUsername(username: String): User = userRepository.findOneByUsername(username)
+    fun findOneByUsername(username: String): Optional<User> = userRepository.findOneByUsername(username)
 
     fun save(user: User) = userRepository.saveAndFlush(user)
+
+    fun deleteById(id: Long) = userRepository.deleteById(id)
 
 }
