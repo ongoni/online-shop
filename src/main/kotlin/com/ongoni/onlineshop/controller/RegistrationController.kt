@@ -1,41 +1,44 @@
 package com.ongoni.onlineshop.controller
 
+import com.ongoni.onlineshop.entity.Role
 import com.ongoni.onlineshop.entity.User
 import com.ongoni.onlineshop.service.SessionService
 import com.ongoni.onlineshop.service.UserService
 import com.ongoni.onlineshop.utils.HashExtensions
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestMapping
-import org.springframework.web.bind.annotation.RequestParam
-import org.springframework.web.bind.annotation.RestController
+import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.*
 
 @RestController
-@RequestMapping("/register")
 class RegistrationController : HashExtensions {
     @Autowired
     private lateinit var userService: UserService
     @Autowired
     private lateinit var sessionService: SessionService
 
-    @PostMapping(produces = ["application/json"])
-    fun register(@RequestParam username: String, @RequestParam password: String): Map<String, Any> {
-        if (userService.findOneByUsername(username).isPresent) {
-            return mapOf(
-                    "error" to true,
-                    "message" to "Username is already used"
+    @PostMapping("/register", consumes = ["application/json"], produces = ["application/json"])
+    fun register(@RequestBody user: User): ResponseEntity<Map<String, Any>> {
+        if (userService.findOneByUsername(user.username).isPresent
+                || (!user.email.isEmpty() && userService.findOneByEmail(user.email).isPresent)) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Username or email is already used"),
+                    HttpStatus.BAD_REQUEST
             )
         }
 
-        val user = User(username = username, password = password.hashed())
-        val session = sessionService.create(user)
+        user.password = user.password.hashed()
+        user.roles = mutableSetOf(Role.USER)
 
         userService.save(user)
-        sessionService.save(session)
 
-        return mapOf(
-                "id" to user.id,
-                "access_token" to session.token
+        val session = sessionService.save(
+                sessionService.create(user)
+        )
+
+        return ResponseEntity(
+                mapOf("user" to user.safeSerialized(), "access_token" to session.token),
+                HttpStatus.OK
         )
     }
 
