@@ -12,7 +12,7 @@ data class Session(
     var id: Long = 0,
 
     @OnDelete(action = OnDeleteAction.CASCADE)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     var user: User = User(),
 
     var token: String = "",
