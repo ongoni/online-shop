@@ -3,19 +3,19 @@ package com.ongoni.onlineshop.service
 import com.ongoni.onlineshop.entity.Session
 import com.ongoni.onlineshop.entity.User
 import com.ongoni.onlineshop.repository.SessionRepository
-import com.ongoni.onlineshop.utils.HashExtensions
+import com.ongoni.onlineshop.utils.generateToken
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.util.*
 
 @Service
-class SessionService : HashExtensions {
+class SessionService {
     @Autowired
     private lateinit var sessionRepository: SessionRepository
 
-    fun findById(id: Long): Optional<Session> = sessionRepository.findById(id)
+    fun findById(id: Long)= sessionRepository.findById(id)
 
-    fun findByToken(token: String): Optional<Session> = sessionRepository.findOneByToken(token)
+    fun findByToken(token: String) = sessionRepository.findOneByToken(token)
 
     fun findAllByUser(user: User) = sessionRepository.findAllByUser(user)
 
