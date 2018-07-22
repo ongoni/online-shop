@@ -4,15 +4,17 @@ import com.ongoni.onlineshop.entity.Role
 import com.ongoni.onlineshop.entity.User
 import com.ongoni.onlineshop.service.SessionService
 import com.ongoni.onlineshop.service.UserService
-import com.ongoni.onlineshop.utils.HashExtensions
+import com.ongoni.onlineshop.utils.hashed
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import kotlin.math.roundToInt
 import kotlin.math.roundToLong
 
 @RestController
-class UserController : HashExtensions {
+class UserController {
     @Autowired
     private lateinit var userService: UserService
     @Autowired
@@ -55,7 +57,7 @@ class UserController : HashExtensions {
         }
 
         return ResponseEntity(
-                mapOf("error" to false, "user" to user.get().safeSerialized()),
+                mapOf("error" to false, "user" to user.get().serialized()),
                 HttpStatus.OK
         )
     }
@@ -63,11 +65,23 @@ class UserController : HashExtensions {
     @PutMapping("/users", consumes = ["application/json"], produces = ["application/json"])
     fun update(@RequestBody map: Map<String, Any>): ResponseEntity<Map<String, Any>> {
         val id = (map["id"]!! as Double).roundToLong()
-        val token = map["access_token"] as String
+        val token = map["access_token"]?.toString() ?: return ResponseEntity(
+                mapOf("error" to true, "message" to "Invalid token"),
+                HttpStatus.UNAUTHORIZED
+        )
+
         if (token.isBlank() || (!token.isBlank()) && !sessionService.findByToken(token).isPresent) {
             return ResponseEntity(
                     mapOf("error" to true, "message" to "Invalid token"),
                     HttpStatus.UNAUTHORIZED
+            )
+        }
+
+        val user = userService.findById(id)
+        if (!user.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "User not found"),
+                    HttpStatus.NOT_FOUND
             )
         }
 
@@ -81,16 +95,8 @@ class UserController : HashExtensions {
 
         if (!map.keys.any { x -> x =="password" || x == "first_name" || x == "last_name" || x == "email"}) {
             return ResponseEntity(
-                    mapOf("error" to true, "message" to "No data to update"),
+                    mapOf("error" to true, "message" to "At least one argument required"),
                     HttpStatus.BAD_REQUEST
-            )
-        }
-
-        val user = userService.findById(id)
-        if (!user.isPresent) {
-            return ResponseEntity(
-                    mapOf("error" to true, "message" to "User not found"),
-                    HttpStatus.NOT_FOUND
             )
         }
 
@@ -119,7 +125,7 @@ class UserController : HashExtensions {
         userService.save(user.get())
 
         return ResponseEntity(
-                mapOf("error" to false, "user" to user),
+                mapOf("error" to false, "user" to user.get().serialized()),
                 HttpStatus.OK
         )
     }
@@ -153,7 +159,7 @@ class UserController : HashExtensions {
             )
         }
 
-        userService.deleteById(user.get().id)
+        userService.deleteById(user.get().id!!)
 
         return ResponseEntity(
                 mapOf("error" to false),
@@ -161,4 +167,26 @@ class UserController : HashExtensions {
         )
     }
 
+    @PostMapping("/users/all", consumes = ["application/json"], produces = ["application/json"])
+    fun all(@RequestBody map: Map<String, Any>): ResponseEntity<Map<String, Any>> {
+        val pageNumber = if (map["page"] is Double) {
+            (map["page"] as Double).roundToInt() - 1
+        } else {
+            0
+        }
+        val limit = if (map["limit"] is Double) {
+            (map["limit"] as Double).roundToInt()
+        } else {
+            0
+        }
+
+        val page = userService.findAll(PageRequest(pageNumber, limit))
+
+        return ResponseEntity(
+                mapOf("error" to false, "users" to page.content.serialized(), "total" to page.totalElements),
+                HttpStatus.OK
+        )
+    }
+
+    fun Collection<User>.serialized() = this.map { it.serialized() }.toList()
 }
