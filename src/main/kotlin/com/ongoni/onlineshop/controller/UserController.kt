@@ -159,7 +159,7 @@ class UserController {
             )
         }
 
-        userService.deleteById(user.get().id!!)
+        userService.deleteById(user.get().id)
 
         return ResponseEntity(
                 mapOf("error" to false),

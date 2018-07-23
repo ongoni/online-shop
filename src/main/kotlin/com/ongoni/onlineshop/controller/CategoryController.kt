@@ -111,6 +111,13 @@ class CategoryController {
 
         val id = (map["id"]!! as Double).roundToLong()
         val category = categoryService.findById(id)
+        if (!category.isPresent) {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Category not found"),
+                    HttpStatus.NOT_FOUND
+            )
+        }
+
         if (session.get().user.id != category.get().shop.user.id && !session.get().user.roles.contains(Role.SUPER)) {
             return ResponseEntity(
                     mapOf("error" to true, "message" to "No necessary authorities"),

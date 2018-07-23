@@ -91,7 +91,7 @@ class ProductController {
             )
         }
 
-        if (productService.findByName(name).isPresent) {
+        if (shopService.findByUser(session.get().user).get().products.any { x -> x.name == name }) {
             return ResponseEntity(
                     mapOf("error" to true, "message" to "Product with this name already exists"),
                     HttpStatus.BAD_REQUEST
@@ -130,6 +130,7 @@ class ProductController {
         )
 
         shop.get().products.add(product)
+        shopService.save(shop.get())
 
         return ResponseEntity(
                 mapOf("error" to false, "product" to product.serialized()),

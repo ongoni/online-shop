@@ -23,8 +23,15 @@ class RegistrationController {
 
     @PostMapping("/register", consumes = ["application/json"], produces = ["application/json"])
     fun register(@RequestBody user: User): ResponseEntity<Map<String, Any>> {
+        if (user.username == "") {
+            return ResponseEntity(
+                    mapOf("error" to true, "message" to "Username can't be empty"),
+                    HttpStatus.BAD_REQUEST
+            )
+        }
+
         if (userService.findOneByUsername(user.username).isPresent
-                || (!user.email.isEmpty() && userService.findOneByEmail(user.email).isPresent)) {
+                || (user.email != null && !user.email!!.isEmpty() && userService.findOneByEmail(user.email!!).isPresent)) {
             return ResponseEntity(
                     mapOf("error" to true, "message" to "Username or email is already used"),
                     HttpStatus.BAD_REQUEST
