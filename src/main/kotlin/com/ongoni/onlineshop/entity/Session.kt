@@ -15,6 +15,7 @@ data class Session(
     @ManyToOne(fetch = FetchType.EAGER)
     var user: User = User(),
 
+    @Column(nullable = false)
     var token: String = "",
 
     @Column(name = "create_date")

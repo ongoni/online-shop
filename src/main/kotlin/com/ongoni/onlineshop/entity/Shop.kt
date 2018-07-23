@@ -11,9 +11,10 @@ data class Shop(
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
         var id: Long = 0,
 
-        @Column(unique = true)
+        @Column(unique = true, nullable = false)
         var name: String = "",
 
+        @Column(nullable = false)
         var description: String = "",
 
         @OneToOne(fetch = FetchType.LAZY)

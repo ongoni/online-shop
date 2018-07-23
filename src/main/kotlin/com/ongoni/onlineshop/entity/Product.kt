@@ -8,13 +8,16 @@ data class Product(
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
         var id: Long = 0,
 
-        @Column(unique = true)
+        @Column(nullable = false)
         var name: String = "",
 
+        @Column(nullable = false)
         var description: String = "",
 
+        @Column(nullable = false)
         var amount: Int = 0,
 
+        @Column(nullable = false)
         var price: Double = 0.0,
 
         @ManyToOne(cascade = [CascadeType.DETACH])
